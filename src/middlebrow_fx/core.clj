@@ -2,11 +2,11 @@
   (:require [middlebrow.core :refer :all])
   (:import [javafx.stage Stage StageStyle]
            [javafx.application Platform Application]
-           [com.sun.javafx.application PlatformImpl]
            [javafx.scene.web WebView]
            [javafx.scene Scene]
            [javafx.event EventHandler]
-           [javafx.beans.value ChangeListener]))
+           [javafx.beans.value ChangeListener]
+           [com.sun.javafx.application PlatformImpl]))
 
 (defmacro run-async [& body]
   `(Platform/runLater (fn [] ~@body)))
@@ -24,8 +24,6 @@
 
 (defrecord FXBrowser [stage web-view call-type]
   IBrowser
-  (container [self] :fx)
-
   (show [self]
     (call call-type
       (.show stage)))
@@ -138,6 +136,11 @@
     (call call-type
       (-> web-view (.getEngine) (.load url))))
 
+  (container-type [self] :fx)
+
+  (start-event-loop [self])
+  (start-event-loop [self error-fn])
+
   (listen-closed [self handler]
     (.setOnCloseRequest stage
       (proxy [EventHandler] []
@@ -158,8 +161,7 @@
         (proxy [ChangeListener] []
           (changed [observable old new]
             (when-not new
-              (handler {})))))))
-  )
+              (handler {}))))))))
 
 (defn style->stage-style [style]
   (case style
